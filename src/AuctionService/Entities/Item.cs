@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuctionService.Entities;
 
+[Table("Items")]
 public class Item
 {
     [MaxLength(36)]
@@ -20,7 +22,7 @@ public class Item
     public required string Description { get; set; }
 
     public int Year { get; set; }
-    public int Milage { get; set; }
+    public int Mileage { get; set; }
 
     [MaxLength(200)]
     public required string ImageUrl { get; set; }
