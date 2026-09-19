@@ -4,6 +4,7 @@ using AuctionService.Entities;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AuctionService.Controllers;
 
@@ -12,9 +13,22 @@ namespace AuctionService.Controllers;
 public class AuctionsController(AuctionDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<AuctionDto>>> GetAuctions()
+    public async Task<ActionResult<List<AuctionDto>>> GetAuctions(string? date)
     {
-        var auctions = await context.Auctions
+        var query = context.Auctions.AsQueryable();
+
+        if (!string.IsNullOrEmpty(date))
+        {
+            if (!DateTime.TryParse(date, CultureInfo.InvariantCulture,
+                DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var parsedDate))
+            {
+                return BadRequest("Invalid Date");
+            }
+
+            query = query.Where(a => a.UpdatedAt > parsedDate);
+        }
+
+        var auctions = await query
             .OrderBy(a => a.Item.Make)
             .ThenBy(a => a.Item.Model)
             .ProjectToType<AuctionDto>()
@@ -76,6 +90,8 @@ public class AuctionsController(AuctionDbContext context) : ControllerBase
         }
 
         //TODO: Check the seller is the same as current user
+
+        auction.UpdatedAt = DateTime.UtcNow;
 
         updateAuctionDto.Adapt(auction.Item);
 
