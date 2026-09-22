@@ -2,6 +2,8 @@ using AuctionService.Data;
 using AuctionService.Errors;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Wolverine;
+using Wolverine.RabbitMQ;
 
 TypeAdapterConfig.GlobalSettings.Scan(typeof(Program).Assembly);
 
@@ -17,6 +19,16 @@ builder.Services.AddDbContext<AuctionDbContext>(options =>
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Host.UseWolverine(opts =>
+{
+    opts.UseRabbitMq(rabbit =>
+    {
+        rabbit.HostName = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        rabbit.UserName = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+        rabbit.Password = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+    })
+    .AutoProvision();
+});
 
 var app = builder.Build();
 
