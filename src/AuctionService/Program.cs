@@ -1,5 +1,6 @@
 using AuctionService.Data;
 using AuctionService.Errors;
+using Contracts;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -27,7 +28,10 @@ builder.Host.UseWolverine(opts =>
         rabbit.UserName = builder.Configuration["RabbitMQ:Username"] ?? "guest";
         rabbit.Password = builder.Configuration["RabbitMQ:Password"] ?? "guest";
     })
+    .DeclareExchange("auction-created", ex => ex.ExchangeType = ExchangeType.Fanout)
     .AutoProvision();
+
+    opts.PublishMessage<AuctionCreated>().ToRabbitExchange("auction-created");
 });
 
 var app = builder.Build();

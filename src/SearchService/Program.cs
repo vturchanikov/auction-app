@@ -1,10 +1,12 @@
+using Mapster;
 using Meilisearch;
 using SearchService.Data;
 using SearchService.Endpoints;
-using SearchService.Models;
 using SearchService.Services;
 using Wolverine;
 using Wolverine.RabbitMQ;
+
+TypeAdapterConfig.GlobalSettings.Scan(typeof(Program).Assembly);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +42,11 @@ builder.Host.UseWolverine(opts =>
         rabbit.UserName = builder.Configuration["RabbitMQ:Username"] ?? "guest";
         rabbit.Password = builder.Configuration["RabbitMQ:Password"] ?? "guest";
     })
+    .DeclareExchange("auction-created", ex => ex.ExchangeType = ExchangeType.Fanout)
+    .BindExchange("auction-created").ToQueue("search-auction-created")
     .AutoProvision();
+
+    opts.ListenToRabbitQueue("search-auction-created");
 });
 
 var app = builder.Build();
